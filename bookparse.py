@@ -3,9 +3,9 @@ import time
 
 start = time.time()
  
-doc = open('letterCount.txt', 'r')
+doc = open('bookparse.txt', 'r')
 txt = filter(lambda x: x.isalpha(), doc.read().lower())
-test
+
 dic = {}
 for c in txt:
 	if not c in dic:
@@ -15,7 +15,7 @@ for c in txt:
 
 sorted_dic = sorted(dic.items(), key=operator.itemgetter(1), reverse=True)
 
-results_file = open('letterCountResults.txt', 'w')
+results_file = open('bookparseResults.txt', 'w')
 result = ''
 for key, value in sorted_dic:
 	result += key + ': ' + str(value) + '\n'
