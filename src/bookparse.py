@@ -3,68 +3,72 @@ import time
 import argparse
 import os
 import sys
+import math
 
 def main(args):
-    #Validate
-    doc = validate_input(args.input)
-    results_file = validate_output(args.output)
-
-    #Get raw lowercase, alphabetical string
-    print "\nReading input file..."
-    txt = filter(lambda x: x.isalpha(), doc.read().lower())
+    results_file = validated_output_file(args.output)
     result = ''
 
     #Write out to results file
-    for key, value in processed_file(txt):
+    for key, value in processed_file():
         result += key + ': ' + str(value) + '\n'
+
     results_file.write(result)
     results_file.close()
 
-def validate_input(input):
+def validated_input_file(input):
     try:
         return open(args.input, 'r')
     except IOError, e:
-        print "Enter a valid input file"
+        print 'Enter a valid input file'
         os._exit(1)
 
-def validate_output(output):
+def validated_output_file(output):
     if output is not None:
         try:
             return open(args.output, 'w')
         except IOError, e:
-            print "Enter a valid output file"
+            print 'Enter a valid output file'
             os._exit(1)
     else:
         #Return new file in this folder
         return open('bookparseResults.txt', 'w') 
 
-def processed_file(txt):
-    print "Processing file..."
-
+def processed_file():
     #Set up progress bar
     toolbar_length = 40
-    sys.stdout.write("[%s]" % (" " * toolbar_length))
+    sys.stdout.write('[%s]' % (' ' * toolbar_length))
     sys.stdout.flush()
-    sys.stdout.write("\b" * (toolbar_length+1)) # return to start of line, after '['
+    sys.stdout.write('\b' * (toolbar_length+1))
 
-    length = len(txt)
-    increment = length/toolbar_length
-    dic = {}
-    inc = 0
+    with validated_input_file(args.input) as file:
+        dic = {}
+        inc = 0
 
-    for c in txt:
-        inc += 1
+        #Determine amount of chunks (for progress bar update)
+        file_size = os.path.getsize(args.input)
+        chunk_size = 1024    #1 Kb - Possibly make this dynamic?
+        total_chunks = file_size / chunk_size
+        total_chunks = math.ceil(total_chunks)
+        increment = total_chunks/toolbar_length
 
-        #Add character to dictionary if it doesn't exist yet
-        #Add 1 to its value if it does
-        dic[c] = 1 if not c in dic else dic[c] + 1
+        #Iterate through chunks of the file
+        for chunk in iter((lambda:file.read(chunk_size)),''):
 
-        if(inc >= (increment)):
-            inc = 0
-            sys.stdout.write("-")
-            sys.stdout.flush()
+            #Strip whitespace; count letters
+            chunk_nws = "".join(chunk.lower().split())
+            txt = filter(lambda x: x.isalpha(), chunk_nws)
+            for c in txt:
+                dic[c] = 1 if not c in dic else dic[c] + 1
 
-    sys.stdout.write("\n")
+            #Update progress bar
+            inc += 1
+            if(inc >= increment):
+                inc = 0
+                sys.stdout.write('-')
+                sys.stdout.flush()
+
+    sys.stdout.write('\n')
     return sorted(dic.items(), key=operator.itemgetter(1), reverse=True)
 
 if __name__ == '__main__':
@@ -78,5 +82,4 @@ if __name__ == '__main__':
     main(args)
 
     end = time.time()
-    print("Total time: %.2f seconds" % (end - start))
-    # print "Total time: " + str((end - start))
+    print('Total time: %.2f seconds' % (end - start))
